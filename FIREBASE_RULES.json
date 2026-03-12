@@ -1,0 +1,105 @@
+{
+  "_INSTRUCTIONS": "Αντιγράψτε αυτούς τους κανόνες στο Firebase Console → Realtime Database → Rules",
+
+  "rules": {
+
+    ".read": false,
+    ".write": false,
+
+    "entries": {
+      ".read": true,
+      "$entryId": {
+        ".write": "auth != null",
+        ".validate": "newData.hasChildren(['lemma', 'semaies', 'authorId']) && newData.child('lemma').isString() && newData.child('lemma').val().length >= 1 && newData.child('lemma').val().length <= 100 && newData.child('authorId').val() === auth.uid || (data.exists() && data.child('authorId').val() === auth.uid) || root.child('users').child(auth.uid).child('role').val() === 'teacher'",
+
+        "likedBy": {
+          "$uid": {
+            ".write": "auth != null && auth.uid === $uid",
+            ".validate": "newData.isBoolean() || !newData.exists()"
+          }
+        },
+
+        "teacherNote": {
+          ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'teacher'",
+          ".validate": "!newData.exists() || (newData.child('text').isString() && newData.child('text').val().length <= 500)"
+        }
+      }
+    },
+
+    "comments": {
+      "$entryId": {
+        ".read": "auth != null",
+        "$commentId": {
+          ".write": "auth != null && (data.child('authorId').val() === auth.uid || !data.exists() || root.child('users').child(auth.uid).child('role').val() === 'teacher')",
+          ".validate": "newData.hasChildren(['text', 'authorId']) && newData.child('text').isString() && newData.child('text').val().length >= 1 && newData.child('text').val().length <= 1000 && (!newData.hasChild('authorId') || newData.child('authorId').val() === auth.uid)"
+        }
+      }
+    },
+
+    "users": {
+      "$uid": {
+        ".read": "auth != null",
+        ".write": "auth != null && auth.uid === $uid",
+        "role": {
+          ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'teacher'"
+        },
+        "bookmarks": {
+          "$entryId": {
+            ".write": "auth != null && auth.uid === $uid"
+          }
+        },
+        "studyItems": {
+          "$entryId": {
+            ".write": "auth != null && auth.uid === $uid"
+          }
+        }
+      }
+    },
+
+    "tags": {
+      ".read": true,
+      ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'teacher'",
+      "$tagId": {
+        ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 50"
+      }
+    },
+
+    "messages": {
+      "$messageId": {
+        ".read": "auth != null && (data.child('toId').val() === auth.uid || data.child('fromId').val() === auth.uid)",
+        ".write": "auth != null && (newData.child('fromId').val() === auth.uid || data.child('toId').val() === auth.uid)",
+        ".validate": "newData.hasChildren(['subject', 'body', 'fromId', 'toId']) && newData.child('body').isString() && newData.child('body').val().length <= 2000"
+      }
+    },
+
+    "challenges": {
+      ".read": true,
+      "$challengeId": {
+        ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'teacher'",
+        ".validate": "newData.hasChildren(['title']) && newData.child('title').isString() && newData.child('title').val().length >= 1 && newData.child('title').val().length <= 200"
+      }
+    },
+
+    "settings": {
+      ".read": "auth != null",
+      "fieldConfig": {
+        ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'teacher'"
+      },
+      "registrationCode": {
+        ".read": true,
+        ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'teacher'"
+      },
+      "featuredEntries": {
+        ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'teacher'"
+      }
+    },
+
+    "logs": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'teacher'",
+      "$logId": {
+        ".write": "auth != null",
+        ".validate": "newData.hasChildren(['message', 'timestamp']) && newData.child('message').isString() && newData.child('message').val().length <= 500"
+      }
+    }
+  }
+}
